@@ -63,11 +63,22 @@ Body: { material_code, record_datetime(ISO8601,過去日時可), duration(秒),
 - AI 生成テキスト（コメント・コミット・説明）は**日本語**。コードコメントは最小限で WHY のみ。
 - 実装は SPEC.md の決定事項に従い、スコープ外に手を広げない。曖昧点は確認する。
 
-## コマンド（セットアップ後に追記する）
+## コマンド
 
 ```bash
-# 予定（package.json 作成後に確定）
-# npm test          # ユニットテスト
-# npm run poll      # ポーラーを1回実行（手動デバッグ）
-# npm run seed      # 初回トークンシード（Playwright でログイン→Keychain 保管）
+npm install        # 依存インストール（dev: vitest / tsx / typescript）
+npm test           # ユニットテスト（vitest）
+npm run typecheck  # 型チェック（tsc --noEmit）
+npm run poll       # ポーラーを1回実行（手動デバッグ。Step 2 時点では検出と台帳記録のみ・投稿なし）
+# npm run seed     # 初回トークンシード（Step 3 で実装。Playwright でログイン→Keychain 保管）
 ```
+
+## ソース構成（Step 2 時点）
+
+- `src/config.ts` … ホワイトリスト（対象アプリ・開発タイトル正規表現）と閾値（idleGap / finalizeSilence = 各15分）。
+- `src/aw/client.ts` … AW ローカル API。bucket は型で動的解決。AQL で not-AFK ∩ window を取得。
+- `src/aw/events.ts` … AW イベント → 計測対象区間（純ロジック・テスト有）。
+- `src/blocks/classify.ts` … ホワイトリスト判定（純ロジック・テスト有）。
+- `src/blocks/blockize.ts` … 区間→ブロック連結（隙間<15分）と確定判定（純ロジック・テスト有）。block ID は start から決定的。
+- `src/ledger/ledger.ts` … 投稿済み台帳（`.state/ledger.json`・git 管理外）。
+- `src/poll.ts` … 上記を束ねる1回ぶんのポーラー。
