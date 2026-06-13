@@ -73,6 +73,26 @@ export class Ledger {
     return this.all().filter((e) => e.status === "pending");
   }
 
+  done(): LedgerEntry[] {
+    return this.all().filter((e) => e.status === "done");
+  }
+
+  /** 投稿成功として確定する。 */
+  markDone(id: string, postedAt: number): void {
+    const e = this.entries.get(id);
+    if (!e) return;
+    e.status = "done";
+    e.postedAt = postedAt;
+    e.attempts += 1;
+  }
+
+  /** 投稿失敗（pending のまま試行回数だけ加算）。 */
+  markFailed(id: string): void {
+    const e = this.entries.get(id);
+    if (!e) return;
+    e.attempts += 1;
+  }
+
   async save(): Promise<void> {
     await mkdir(dirname(this.path), { recursive: true });
     await writeFile(this.path, JSON.stringify(this.all(), null, 2), "utf8");
