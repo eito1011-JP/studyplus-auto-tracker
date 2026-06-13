@@ -1,0 +1,21 @@
+# 認証情報・トークン（絶対にコミットしない）
+.secrets/
+*.token
+token.json
+auth.json
+
+# 投稿済み台帳・ローカル状態
+.state/
+ledger.json
+ledger.sqlite
+
+# Playwright 初回シードのセッション
+.playwright-session/
+storageState.json
+
+# Node
+node_modules/
+dist/
+*.log
+.env
+.env.*
