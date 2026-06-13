@@ -34,5 +34,5 @@ export const config: TrackerConfig = {
   ],
   idleGapMs: 15 * 60 * 1000,
   finalizeSilenceMs: 15 * 60 * 1000,
-  materialName: "アプリ開発",
+  materialName: "Lexis 開発",
 };

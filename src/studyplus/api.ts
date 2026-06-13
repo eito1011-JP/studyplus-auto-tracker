@@ -52,9 +52,9 @@ export function buildStudyRecordBody(input: StudyRecordInput): Record<string, un
   };
 }
 
-export interface MaterialEntry {
+export interface ShelfMaterial {
   code: string;
-  name: string;
+  title: string;
 }
 
 /** StudyPlus API の薄いクライアント。 */
@@ -75,14 +75,25 @@ export class StudyPlusApi {
     if (!res.ok) throw new Error(`GET /me -> ${res.status}`);
   }
 
-  /** 教材一覧を取得し、名前一致の教材コードを返す。 */
-  async findMaterialCode(name: string): Promise<string | null> {
-    const res = await fetch(`${this.baseUrl}/book/book_material_entries`, { headers: this.headers() });
+  /** /me から自分の username を得る（本棚エンドポイントに必要）。 */
+  private async myUsername(): Promise<string> {
+    const res = await fetch(`${this.baseUrl}/me`, { headers: this.headers() });
     if (res.status === 401) throw new AuthError();
-    if (!res.ok) throw new Error(`GET /book/book_material_entries -> ${res.status}`);
-    const json = (await res.json()) as unknown;
-    const entries = extractMaterials(json);
-    return entries.find((m) => m.name === name)?.code ?? null;
+    if (!res.ok) throw new Error(`GET /me -> ${res.status}`);
+    const j = (await res.json()) as { username?: string };
+    if (!j.username) throw new Error("/me に username がありません");
+    return j.username;
+  }
+
+  /** 自分の本棚から名前一致の教材コードを返す。自作(private)教材もここに含まれる。 */
+  async findMaterialCode(name: string): Promise<string | null> {
+    const username = await this.myUsername();
+    const url = `${this.baseUrl}/bookshelf_entries?username=${encodeURIComponent(username)}&include_categories=true&include_drill=true`;
+    const res = await fetch(url, { headers: this.headers() });
+    if (res.status === 401) throw new AuthError();
+    if (!res.ok) throw new Error(`GET /bookshelf_entries -> ${res.status}`);
+    const materials = flattenShelf(await res.json());
+    return materials.find((m) => m.title === name)?.code ?? null;
   }
 
   async postRecord(input: StudyRecordInput): Promise<void> {
@@ -96,21 +107,22 @@ export class StudyPlusApi {
   }
 }
 
-/** 教材一覧レスポンスから {code,name} を抽出する（レスポンス形の揺れに緩く対応）。 */
-export function extractMaterials(json: unknown): MaterialEntry[] {
-  const arr = Array.isArray(json)
-    ? json
-    : Array.isArray((json as Record<string, unknown>)?.["book_material_entries"])
-      ? ((json as Record<string, unknown>)["book_material_entries"] as unknown[])
-      : Array.isArray((json as Record<string, unknown>)?.["entries"])
-        ? ((json as Record<string, unknown>)["entries"] as unknown[])
-        : [];
-  const out: MaterialEntry[] = [];
-  for (const item of arr) {
-    const o = item as Record<string, unknown>;
-    const code = (o["material_code"] ?? o["code"]) as string | undefined;
-    const name = (o["title"] ?? o["name"]) as string | undefined;
-    if (typeof code === "string" && typeof name === "string") out.push({ code, name });
+/**
+ * 本棚レスポンス（bookshelf_entries.{open,in_progress,closed}[]）を平坦化する（純ロジック）。
+ * 自作(private)教材・書籍教材いずれも material_code / material_title を持つ。
+ */
+export function flattenShelf(json: unknown): ShelfMaterial[] {
+  const be = (json as Record<string, unknown>)?.["bookshelf_entries"];
+  if (!be || typeof be !== "object") return [];
+  const out: ShelfMaterial[] = [];
+  for (const bucket of Object.values(be as Record<string, unknown>)) {
+    if (!Array.isArray(bucket)) continue;
+    for (const item of bucket) {
+      const o = item as Record<string, unknown>;
+      const code = o["material_code"];
+      const title = o["material_title"];
+      if (typeof code === "string" && typeof title === "string") out.push({ code, title });
+    }
   }
   return out;
 }
