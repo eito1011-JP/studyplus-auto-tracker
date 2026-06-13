@@ -62,36 +62,42 @@ cd studyplus-auto-tracker
 npm install
 ```
 
-### 3. StudyPlus 側に教材を用意する
+### 3. StudyPlus 側に記録先の教材を用意する
 
-記録はすべて1つの教材に集約します。StudyPlus で **「アプリ開発」という名前の教材**を作っておいてください（名前を変えたい場合は [設定](#設定) を参照）。
+記録はすべて1つの教材に集約します。StudyPlus の本棚に**記録先にしたい教材**を用意し（無ければ作成）、その**教材名**を [`src/config.ts`](./src/config.ts) の `materialName` に設定してください。ツールは起動時に、あなたの本棚（自作教材・書籍教材どちらも可）から名前一致で教材コードを解決します。
 
-### 4. アクセストークンを登録する
+### 4. アクセストークンを登録する（初回のみ）
 
-ブラウザの StudyPlus からトークンを取り出して登録します（初回のみ）。
+トークンは一度だけ登録すれば macOS キーチェーンに保管され、再起動後も再取得は不要です。2通りあります。
 
-1. ブラウザで StudyPlus にログイン
-2. デベロッパーツール → **Network** タブを開く
-3. `api.studyplus.jp` 宛のリクエストを1つ選び、**Request Headers** の
-   `authorization: OAuth <ここの値>` をコピー
-4. 登録：
+**A. ブラウザ自動取得（おすすめ）**
 
 ```bash
-npm run seed
-# プロンプトに貼り付けて Enter（疎通確認に成功すると保管されます）
+npm run seed:browser
+# 開いたブラウザで StudyPlus にログインするだけ。
+# ログイン後の通信からトークンを自動取得して保管します。
 ```
 
-トークンは **macOS のキーチェーン**に保管され、リポジトリには一切書き込まれません。
-後でトークンが失効すると通知が出るので、その時はもう一度 `npm run seed` を実行します。
+**B. 手動ペースト**
 
-### 5. 動作確認して常駐させる
+1. ブラウザで StudyPlus にログイン → デベロッパーツールの **Network** タブ
+2. `api.studyplus.jp` 宛リクエストの **Request Headers** にある `authorization: OAuth <値>` の `<値>` をコピー
+3. `npm run seed` を実行して貼り付け
+
+どちらも `/me` で疎通確認後に保管します。トークンが失効した場合だけ、通知が出るので再度実行してください。
+
+### 5. トラッキング開始
 
 ```bash
-npm run poll            # 1回だけ手動実行して記録されるか確認
-npm run launchd:install # 問題なければ常駐（5分間隔）を有効化
+npm run track
 ```
 
-常駐の停止は `npm run launchd:uninstall`。ログは `.state/poll.log` に出ます。
+この1コマンドで「ActivityWatch 起動 → 常駐（5分間隔）を有効化 → 1回ポーリング」まで完了します。
+以降は **何もしなくて OK**（ログイン時に自動起動し、再起動後も自動復帰します）。
+
+- 停止: `npm run launchd:uninstall`
+- ログ: `.state/poll.log`
+- 手動で1回だけ実行: `npm run poll`
 
 ## 設定
 
@@ -104,7 +110,7 @@ npm run launchd:install # 問題なければ常駐（5分間隔）を有効化
 | `devTitlePatterns` | 「開発関連タイトル」とみなす正規表現 | GitHub / localhost / 技術ドキュメント等 |
 | `idleGapMs` | この時間未満の空きは同じブロックに連結 | 15分 |
 | `finalizeSilenceMs` | 末尾がこの時間途切れたらブロック確定 | 15分 |
-| `materialName` | 記録を紐づける教材名 | `アプリ開発` |
+| `materialName` | 記録を紐づける教材名（**自分の本棚にある教材名に変更すること**） | `Lexis 開発` |
 
 > アプリ名は ActivityWatch が報告する名前です（例：VS Code は `Code`）。
 > 自分の環境での名前は ActivityWatch の Web UI（http://localhost:5600）で確認できます。

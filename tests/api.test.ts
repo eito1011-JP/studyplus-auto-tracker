@@ -3,7 +3,7 @@ import {
   buildHeaders,
   buildStudyRecordBody,
   toJstIso,
-  extractMaterials,
+  flattenShelf,
 } from "../src/studyplus/api.js";
 import { postTokenFor } from "../src/studyplus/posttoken.js";
 
@@ -56,13 +56,22 @@ describe("postTokenFor", () => {
   });
 });
 
-describe("extractMaterials", () => {
-  it("配列・ネスト・フィールド名の揺れを吸収する", () => {
-    expect(extractMaterials([{ material_code: "c1", title: "アプリ開発" }])).toEqual([
-      { code: "c1", name: "アプリ開発" },
+describe("flattenShelf", () => {
+  it("open/in_progress/closed を平坦化して {code,title} にする", () => {
+    const json = {
+      bookshelf_entries: {
+        open: [{ material_code: "c1", material_title: "数学" }],
+        in_progress: [{ material_code: "c2", material_title: "Lexis 開発" }],
+        closed: [],
+      },
+    };
+    expect(flattenShelf(json)).toEqual([
+      { code: "c1", title: "数学" },
+      { code: "c2", title: "Lexis 開発" },
     ]);
-    expect(extractMaterials({ entries: [{ code: "c2", name: "数学" }] })).toEqual([
-      { code: "c2", name: "数学" },
-    ]);
+  });
+
+  it("bookshelf_entries が無ければ空配列", () => {
+    expect(flattenShelf({})).toEqual([]);
   });
 });

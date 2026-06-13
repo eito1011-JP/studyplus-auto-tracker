@@ -79,7 +79,8 @@ Body (JSON):
 
 ### 補助エンドポイント
 
-- `GET https://api.studyplus.jp/2/book/book_material_entries` … 教材一覧（「アプリ開発」の UUID を解決）
+- `GET https://api.studyplus.jp/2/bookshelf_entries?username=<username>&include_categories=true&include_drill=true` … **自分の本棚**（自作 private 教材含む）から教材コードを解決。`bookshelf_entries.{open,in_progress,closed}[]` に `material_code`/`material_title`。
+  - ※当初は `/2/book/book_material_entries` を想定していたが、これは書籍タイプ専用で自作教材を返さず空になる（2026-06-13 実機で判明し修正）。`/2/learning_materials` は全体カタログで自分の棚ではない。
 - `GET https://api.studyplus.jp/2/me` … 認証確認（401 でトークン失効を検知）
 
 ### 認証

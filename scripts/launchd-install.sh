@@ -21,7 +21,7 @@ cat > "$PLIST" <<EOF
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd "${PROJECT_DIR}" && npm run poll</string>
+    <string>open -a ActivityWatch ; cd "${PROJECT_DIR}" && npm run poll</string>
   </array>
   <key>StartInterval</key><integer>${INTERVAL}</integer>
   <key>RunAtLoad</key><true/>

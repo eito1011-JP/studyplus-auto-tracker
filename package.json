@@ -7,8 +7,10 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "track": "bash scripts/track.sh",
     "poll": "tsx src/poll.ts",
     "seed": "tsx src/seed.ts",
+    "seed:browser": "tsx src/seed-playwright.ts",
     "typecheck": "tsc --noEmit",
     "launchd:install": "bash scripts/launchd-install.sh",
     "launchd:uninstall": "bash scripts/launchd-uninstall.sh"
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/uuid": "^10.0.0",
+    "playwright": "^1.60.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

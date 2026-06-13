@@ -38,8 +38,9 @@ Body: { material_code, record_datetime(ISO8601,過去日時可), duration(秒),
         post_token(冪等UUID), comment, study_source_type:"studyplus", runtimeType:"default" }
 ```
 
-- `GET /2/book/book_material_entries` … 教材一覧（「アプリ開発」の UUID 解決）
-- `GET /2/me` … 認証確認（401 で失効検知）
+- `GET /2/bookshelf_entries?username=<username>&include_categories=true&include_drill=true` … **自分の本棚**（自作 private 教材含む）。`bookshelf_entries.{open,in_progress,closed}[]` に `material_code`/`material_title`。教材名→コード解決はこれを使う。
+- `GET /2/me` … 認証確認（401 で失効検知）。`username` もここから取得（本棚に必要）。
+- 注: `GET /2/book/book_material_entries` は書籍タイプ専用で自作教材は返さない。`/2/learning_materials` は全体カタログ（自分の棚ではない）。
 - `duration` は**秒**。`post_token` は**冪等トークン**＝二重投稿防止に使う。
 
 ## ビルド順（SPEC.md 準拠）
@@ -69,9 +70,11 @@ Body: { material_code, record_datetime(ISO8601,過去日時可), duration(秒),
 npm install              # 依存インストール（runtime: uuid / dev: vitest / tsx / typescript）
 npm test                 # ユニットテスト（vitest）
 npm run typecheck        # 型チェック（tsc --noEmit）
-npm run seed             # 初回トークンシード（手動。OAuth トークンを貼る → /me 疎通確認 → Keychain 保管）
+npm run track            # 1コマンド開始（AW 起動 → 常駐有効化 → 1回ポーリング）。以後は自動
+npm run seed             # 初回トークンシード（手動ペースト → /me 疎通確認 → Keychain 保管）
+npm run seed:browser     # 初回トークンシード（Playwright で app.studyplus.jp を開き、ログイン後の通信から自動取得）
 npm run poll             # ポーラーを1回実行（確定ブロック検出 → 台帳 → StudyPlus 投稿）
-npm run launchd:install  # launchd 常駐をインストール（5分間隔）
+npm run launchd:install  # launchd 常駐をインストール（5分間隔・AW 自動起動込み）
 npm run launchd:uninstall
 ```
 
@@ -92,11 +95,13 @@ npm run launchd:uninstall
 - `src/blocks/blockize.ts` … 区間→ブロック連結（隙間<15分）と確定判定（純ロジック・テスト有）。block ID は start から決定的。
 - `src/ledger/ledger.ts` … 投稿済み台帳（`.state/ledger.json`・git 管理外）。
 - `src/state.ts` … 教材コードキャッシュ・サマリー送信日（`.state/app.json`・git 管理外）。
-- `src/studyplus/api.ts` … StudyPlus API v2 クライアント＋リクエスト組み立て（純ロジック・テスト有）。401 は `AuthError`。
+- `src/studyplus/api.ts` … StudyPlus API v2 クライアント＋リクエスト組み立て（純ロジック・テスト有）。401 は `AuthError`。教材解決は `bookshelf_entries`→`flattenShelf`。
 - `src/studyplus/posttoken.ts` … block ID → 冪等 post_token（uuidv5・テスト有）。
 - `src/studyplus/keychain.ts` … macOS Keychain でトークン保管（`security` CLI）。
 - `src/pusher.ts` … 台帳 pending を投稿し done/失敗/401 を捌く（テスト有）。
 - `src/notify/notify.ts` … macOS 通知（`osascript`）。失敗即通知＋日次サマリー。
 - `src/seed.ts` … 初回トークンシード（手動ペースト）。
+- `src/seed-playwright.ts` … 初回トークンシード（Playwright で app.studyplus.jp を開き、ログイン後の通信から自動取得）。
 - `src/poll.ts` … 上記を束ねる1回ぶんのポーラー。
-- `scripts/launchd-*.sh` … launchd 常駐の導入/削除。
+- `scripts/launchd-*.sh` … launchd 常駐の導入/削除（AW 自動起動込み）。
+- `scripts/track.sh` … `npm run track`。AW 起動＋常駐確認＋1回ポーリングを1コマンドで。
