@@ -66,19 +66,37 @@ Body: { material_code, record_datetime(ISO8601,過去日時可), duration(秒),
 ## コマンド
 
 ```bash
-npm install        # 依存インストール（dev: vitest / tsx / typescript）
-npm test           # ユニットテスト（vitest）
-npm run typecheck  # 型チェック（tsc --noEmit）
-npm run poll       # ポーラーを1回実行（手動デバッグ。Step 2 時点では検出と台帳記録のみ・投稿なし）
-# npm run seed     # 初回トークンシード（Step 3 で実装。Playwright でログイン→Keychain 保管）
+npm install              # 依存インストール（runtime: uuid / dev: vitest / tsx / typescript）
+npm test                 # ユニットテスト（vitest）
+npm run typecheck        # 型チェック（tsc --noEmit）
+npm run seed             # 初回トークンシード（手動。OAuth トークンを貼る → /me 疎通確認 → Keychain 保管）
+npm run poll             # ポーラーを1回実行（確定ブロック検出 → 台帳 → StudyPlus 投稿）
+npm run launchd:install  # launchd 常駐をインストール（5分間隔）
+npm run launchd:uninstall
 ```
 
-## ソース構成（Step 2 時点）
+### 初回トークンシード手順（決定 #12・手動）
 
-- `src/config.ts` … ホワイトリスト（対象アプリ・開発タイトル正規表現）と閾値（idleGap / finalizeSilence = 各15分）。
-- `src/aw/client.ts` … AW ローカル API。bucket は型で動的解決。AQL で not-AFK ∩ window を取得。
+1. ブラウザで StudyPlus web にログイン。
+2. devtools → Network → `api.studyplus.jp` への任意のリクエストを開く。
+3. Request Headers の `authorization: OAuth <token>` の `<token>` をコピー。
+4. `npm run seed` → 貼り付け（または `STUDYPLUS_TOKEN=... npm run seed`）。`/me` で疎通確認後 Keychain 保管。
+5. `/me` が 401 → 通知が出るので再度 `npm run seed`。
+
+## ソース構成
+
+- `src/config.ts` … ホワイトリスト・閾値（idleGap / finalizeSilence = 各15分）・教材名（"アプリ開発"）。
+- `src/aw/client.ts` … AW ローカル API。bucket を型で動的解決し AQL で not-AFK ∩ window を取得。
 - `src/aw/events.ts` … AW イベント → 計測対象区間（純ロジック・テスト有）。
 - `src/blocks/classify.ts` … ホワイトリスト判定（純ロジック・テスト有）。
 - `src/blocks/blockize.ts` … 区間→ブロック連結（隙間<15分）と確定判定（純ロジック・テスト有）。block ID は start から決定的。
 - `src/ledger/ledger.ts` … 投稿済み台帳（`.state/ledger.json`・git 管理外）。
+- `src/state.ts` … 教材コードキャッシュ・サマリー送信日（`.state/app.json`・git 管理外）。
+- `src/studyplus/api.ts` … StudyPlus API v2 クライアント＋リクエスト組み立て（純ロジック・テスト有）。401 は `AuthError`。
+- `src/studyplus/posttoken.ts` … block ID → 冪等 post_token（uuidv5・テスト有）。
+- `src/studyplus/keychain.ts` … macOS Keychain でトークン保管（`security` CLI）。
+- `src/pusher.ts` … 台帳 pending を投稿し done/失敗/401 を捌く（テスト有）。
+- `src/notify/notify.ts` … macOS 通知（`osascript`）。失敗即通知＋日次サマリー。
+- `src/seed.ts` … 初回トークンシード（手動ペースト）。
 - `src/poll.ts` … 上記を束ねる1回ぶんのポーラー。
+- `scripts/launchd-*.sh` … launchd 常駐の導入/削除。

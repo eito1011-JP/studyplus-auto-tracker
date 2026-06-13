@@ -108,7 +108,7 @@ Body (JSON):
 - **Step 0（完了）** Playwright で StudyPlus 偵察 → 教材作成可・過去日時/分数指定可・API 仕様確定。
 - **Step 1（完了）** ActivityWatch 導入 + ローカル API から稼働データが引けるか確認。AQL で「not-AFK 期間中のアクティブアプリ」取得まで検証済み。決定 #5 は「心拍ソース不要・実測不要」で確定（入力ゼロ時間は離席扱いで差し引いてよい）。
 - **Step 2（完了）** ポーラー + 台帳 + ブロック化ロジック。純ロジック（classify / blockize / events→intervals）はテストファーストで実装・19テスト緑。`npm run poll` でライブ AW から確定ブロック検出 → 台帳記録まで動作確認済み（投稿は Step 3）。
-- **Step 3** API pusher + 初回トークンシード + launchd 常駐 + 通知。
+- **Step 3（実装完了・要初回シード）** API pusher + 初回トークンシード + launchd 常駐 + 通知を実装。トークンシードは Playwright 自動化ではなく手動ペースト方式に変更（決定 #12 の「手動」準拠・Google SSO 自動化の脆さを回避）。純ロジック（api ビルダー / post_token / pusher）はテスト済み・28テスト緑。実 POST 経路は初回 `npm run seed` 後に実機確認する。
 
 ## スコープ外（MVP では割り切り）
 

@@ -8,6 +8,7 @@ const cfg: TrackerConfig = {
   devTitlePatterns: [/github\.com/i],
   idleGapMs: 15 * 60 * 1000,
   finalizeSilenceMs: 15 * 60 * 1000,
+  materialName: "アプリ開発",
 };
 
 const ev = (timestamp: string, duration: number, app: string, title = ""): AwEvent => ({

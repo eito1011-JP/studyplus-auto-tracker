@@ -12,6 +12,8 @@ export interface TrackerConfig {
   idleGapMs: number;
   /** ブロック末尾からこの時間を超えて沈黙したら「確定」＝投稿対象。 */
   finalizeSilenceMs: number;
+  /** 全ブロックを紐づける教材名（決定 #6）。起動時に code を解決しキャッシュ。 */
+  materialName: string;
 }
 
 export const config: TrackerConfig = {
@@ -32,4 +34,5 @@ export const config: TrackerConfig = {
   ],
   idleGapMs: 15 * 60 * 1000,
   finalizeSilenceMs: 15 * 60 * 1000,
+  materialName: "アプリ開発",
 };
